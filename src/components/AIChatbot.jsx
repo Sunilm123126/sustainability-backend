@@ -378,9 +378,7 @@ function AIChatbot() {
                         </button>
 
                     </div>
-
                 </div>
-
             )}
         </>
     );
