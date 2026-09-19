@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import "../assets/admindashboard.css";
-
+import AdminAIChatbot from "../components/AdminAIChatbot";
 import {
     ResponsiveContainer,
     PieChart,
@@ -236,7 +236,7 @@ function Admin({ onLogout }) {
                 {/* WELCOME */}
 
                 <section className="admin-welcome">
-
+                    <AdminAIChatbot />
                     <div>
 
                         <h2>
