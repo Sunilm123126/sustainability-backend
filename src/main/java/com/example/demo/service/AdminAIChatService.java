@@ -503,12 +503,12 @@ public class AdminAIChatService {
 
             return textNode.asText();
 
-        } catch (Exception e) {
+        }  catch (Exception e) {
 
-            e.printStackTrace();
+        e.printStackTrace();
 
-            return "Sorry, the Admin AI is currently unavailable.";
-        }
+        return "Admin AI Error: " + e.getMessage();
+    }
     }
 
     // ==============================
