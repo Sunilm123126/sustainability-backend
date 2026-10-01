@@ -1,7 +1,8 @@
 package com.example.demo.controller;
-
 import com.example.demo.entity.User;
 import com.example.demo.repository.UserRepository;
+import com.example.demo.dto.LoginRequest;
+
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -24,54 +25,120 @@ public class UserController {
     // =========================================
     // REGISTER NEW USER
     // =========================================
-
     @PostMapping("/register")
-    public ResponseEntity<String> register(
+    public ResponseEntity<?> register(
             @RequestParam String username,
-            @RequestParam String password
-    ) {
+            @RequestParam String email,
+            @RequestParam String password) {
 
-        // Check if username already exists
-        Optional<User> existingUser =
-                userRepository.findByUsername(username);
+        try {
 
-        if (existingUser.isPresent()) {
+            if (username == null || username.trim().isEmpty()) {
+                return ResponseEntity.badRequest()
+                        .body("Username is required.");
+            }
 
-            return ResponseEntity
-                    .status(HttpStatus.BAD_REQUEST)
-                    .body("Username already exists!");
+            if (email == null || email.trim().isEmpty()) {
+                return ResponseEntity.badRequest()
+                        .body("Email is required.");
+            }
+
+            if (password == null || password.trim().isEmpty()) {
+                return ResponseEntity.badRequest()
+                        .body("Password is required.");
+            }
+
+            String cleanUsername = username.trim();
+            String cleanEmail = email.trim().toLowerCase();
+
+            if (userRepository.findByUsername(cleanUsername).isPresent()) {
+                return ResponseEntity.badRequest()
+                        .body("Username already exists.");
+            }
+
+            if (userRepository.findByEmail(cleanEmail).isPresent()) {
+                return ResponseEntity.badRequest()
+                        .body("Email already exists.");
+            }
+
+            User user = new User();
+
+            user.setUsername(cleanUsername);
+            user.setEmail(cleanEmail);
+            user.setPassword(password);
+            user.setRole("USER");
+
+            userRepository.save(user);
+
+            return ResponseEntity.ok(
+                    "Registration successful."
+            );
+
+        } catch (Exception e) {
+
+            e.printStackTrace();
+
+            return ResponseEntity.internalServerError()
+                    .body("Registration failed.");
         }
-
-
-        // Create new user
-        User user = new User();
-
-        user.setUsername(username);
-        user.setPassword(password);
-
-        // Every new registered account is USER
-        user.setRole("USER");
-
-
-        // Save to MySQL
-        userRepository.save(user);
-
-
-        return ResponseEntity.ok(
-                "Registration successful!"
-        );
     }
-
-
     // =========================================
     // LOGIN
     // =========================================
 
     @PostMapping("/login")
     public ResponseEntity<?> login(
-            @RequestParam String username,
-            @RequestParam String password
+            @RequestBody LoginRequest request
     ) {
+
+        // Validate request
+        if (request == null ||
+                request.getUsername() == null ||
+                request.getPassword() == null) {
+
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of(
+                            "message",
+                            "Username and password are required."
+                    ));
+        }
+
+
+        String username =
+                request.getUsername().trim();
+
+        String password =
+                request.getPassword();
+
+
+        // Validate username
+        if (username.isEmpty()) {
+
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of(
+                            "message",
+                            "Username is required."
+                    ));
+        }
+
+
+        // Validate password
+        if (password.isEmpty()) {
+
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of(
+                            "message",
+                            "Password is required."
+                    ));
+        }
+
+
+        // =========================================
+        // FIND USER
+        // =========================================
 
         Optional<User> optionalUser =
                 userRepository.findByUsername(username);
@@ -82,33 +149,70 @@ public class UserController {
 
             return ResponseEntity
                     .status(HttpStatus.UNAUTHORIZED)
-                    .body("User not found!");
+                    .body(Map.of(
+                            "message",
+                            "User not found!"
+                    ));
         }
 
 
         User user = optionalUser.get();
 
 
-        // Wrong password
+        // =========================================
+        // CHECK PASSWORD
+        // =========================================
+
+        /*
+         * Your current MySQL database stores passwords
+         * as plain text.
+         *
+         * Example:
+         *
+         * username = s
+         * password = s
+         *
+         * Therefore we compare directly for now.
+         */
+
         if (!user.getPassword().equals(password)) {
 
             return ResponseEntity
                     .status(HttpStatus.UNAUTHORIZED)
-                    .body("Incorrect password!");
+                    .body(Map.of(
+                            "message",
+                            "Incorrect password!"
+                    ));
         }
 
 
-        // Successful login response
-        Map<String, String> response =
+        // =========================================
+        // SUCCESSFUL LOGIN
+        // =========================================
+
+        Map<String, Object> response =
                 new HashMap<>();
 
-        response.put("username", user.getUsername());
+        response.put(
+                "username",
+                user.getUsername()
+        );
 
         response.put(
                 "role",
                 user.getRole() != null
                         ? user.getRole()
                         : "USER"
+        );
+
+        response.put(
+                "id",
+                user.getId()
+        );
+
+        response.put(
+                "email",
+                user.getEmail()
         );
 
 
@@ -144,7 +248,10 @@ public class UserController {
 
             return ResponseEntity
                     .status(HttpStatus.NOT_FOUND)
-                    .body("User not found!");
+                    .body(Map.of(
+                            "message",
+                            "User not found!"
+                    ));
         }
 
         return ResponseEntity.ok(user.get());
@@ -156,7 +263,7 @@ public class UserController {
     // =========================================
 
     @DeleteMapping("/users/{id}")
-    public ResponseEntity<String> deleteUser(
+    public ResponseEntity<?> deleteUser(
             @PathVariable Long id
     ) {
 
@@ -164,7 +271,10 @@ public class UserController {
 
             return ResponseEntity
                     .status(HttpStatus.NOT_FOUND)
-                    .body("User not found!");
+                    .body(Map.of(
+                            "message",
+                            "User not found!"
+                    ));
         }
 
 
@@ -172,7 +282,10 @@ public class UserController {
 
 
         return ResponseEntity.ok(
-                "User deleted successfully!"
+                Map.of(
+                        "message",
+                        "User deleted successfully!"
+                )
         );
     }
 }

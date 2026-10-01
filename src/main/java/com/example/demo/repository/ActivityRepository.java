@@ -8,9 +8,17 @@ import java.util.List;
 public interface ActivityRepository
         extends JpaRepository<Activity, Long> {
 
-    List<Activity> findByUsername(String username);
+    List<Activity> findByUsername(
+            String username
+    );
 
     List<Activity> findByUsernameOrderByCreatedAtDesc(
             String username
+    );
+
+    List<Activity> findByUsernameAndCreatedAtBetween(
+            String username,
+            java.time.LocalDateTime start,
+            java.time.LocalDateTime end
     );
 }

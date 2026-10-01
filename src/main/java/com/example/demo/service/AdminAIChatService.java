@@ -464,13 +464,12 @@ public class AdminAIChatService {
             // ==============================
             // CALL GEMINI
             // ==============================
-
             String response =
                     restClient.post()
-                            .uri(
-                                    GEMINI_URL
-                                            + "?key="
-                                            + apiKey
+                            .uri(GEMINI_URL)
+                            .header(
+                                    "x-goog-api-key",
+                                    apiKey
                             )
                             .header(
                                     "Content-Type",
