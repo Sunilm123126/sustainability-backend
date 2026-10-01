@@ -193,7 +193,88 @@ function AdminDashboard({ username, onLogout }) {
             0
         );
 
+// ==========================================
+// LEADERBOARD
+// ==========================================
 
+    const leaderboard = users
+        .map((user) => {
+
+            const username = user.username;
+
+            const userActivities = activities.filter(
+                (item) => item.username === username
+            );
+
+            const activityCount = userActivities.length;
+
+            const userEmission = userActivities.reduce(
+                (total, item) =>
+                    total + Number(item.emission || 0),
+                0
+            );
+
+            return {
+                username,
+                activityCount,
+                emission: userEmission
+            };
+        })
+        .filter((user) => user.activityCount > 0)
+        .sort(
+            (a, b) =>
+                b.activityCount - a.activityCount
+        );
+
+
+// ==========================================
+// BADGES
+// ==========================================
+
+    const getBadges = (username) => {
+
+        const userActivities = activities.filter(
+            (item) => item.username === username
+        );
+
+        const activityCount = userActivities.length;
+
+        const badges = [];
+
+        if (activityCount >= 1) {
+            badges.push({
+                icon: "🌱",
+                name: "Eco Starter",
+                description: "Logged your first sustainability activity"
+            });
+        }
+
+        if (activityCount >= 5) {
+            badges.push({
+                icon: "🌿",
+                name: "Eco Explorer",
+                description: "Logged 5 or more activities"
+            });
+        }
+
+        if (activityCount >= 10) {
+            badges.push({
+                icon: "🌍",
+                name: "Eco Warrior",
+                description: "Logged 10 or more activities"
+            });
+        }
+
+        if (activityCount >= 25) {
+            badges.push({
+                icon: "🏆",
+                name: "Eco Champion",
+                description: "Logged 25 or more activities"
+            });
+        }
+
+        return badges;
+    };
     // ==========================================
     // LOADING
     // ==========================================
@@ -680,7 +761,227 @@ function AdminDashboard({ username, onLogout }) {
 
                     </div>
 
+                    <button className="admin-menu">
+                        <span className="menu-icon">🏆</span>
 
+                        <span className="menu-text">
+        Leaders
+    </span>
+                    </button>
+
+                    <button className="admin-menu">
+                        <span className="menu-icon">🏅</span>
+
+                        <span className="menu-text">
+        Badges
+    </span>
+                    </button>{/* =====================================
+    LEADERBOARD
+===================================== */}
+
+                    <div className="admin-section">
+
+                        <div className="section-header">
+
+                            <div>
+
+                                <h2>
+                                    🏆 Sustainability Leaders
+                                </h2>
+
+                                <p>
+                                    Users with the highest activity participation
+                                </p>
+
+                            </div>
+
+                            <span className="activity-count">
+            {leaderboard.length} active users
+        </span>
+
+                        </div>
+
+
+                        <div className="leaderboard-container">
+
+                            {leaderboard.length === 0 ? (
+
+                                <div className="no-data">
+                                    No leaderboard data available
+                                </div>
+
+                            ) : (
+
+                                leaderboard
+                                    .slice(0, 10)
+                                    .map((leader, index) => (
+
+                                        <div
+                                            className="leader-card"
+                                            key={leader.username}
+                                        >
+
+                                            <div className="leader-rank">
+
+                                                {index === 0
+                                                    ? "🥇"
+                                                    : index === 1
+                                                        ? "🥈"
+                                                        : index === 2
+                                                            ? "🥉"
+                                                            : `#${index + 1}`}
+
+                                            </div>
+
+
+                                            <div className="leader-avatar">
+
+                                                {leader.username
+                                                    .charAt(0)
+                                                    .toUpperCase()}
+
+                                            </div>
+
+
+                                            <div className="leader-info">
+
+                                                <h3>
+                                                    {leader.username}
+                                                </h3>
+
+                                                <p>
+                                                    {leader.activityCount} activities logged
+                                                </p>
+
+                                            </div>
+
+
+                                            <div className="leader-emission">
+
+                                                <strong>
+                                                    {leader.emission.toFixed(2)}
+                                                </strong>
+
+                                                <span>
+                                kg CO₂e
+                            </span>
+
+                                            </div>
+
+                                        </div>
+
+                                    ))
+
+                            )}
+
+                        </div>
+
+                    </div>{/* =====================================
+    BADGES
+===================================== */}
+
+                    <div className="admin-section">
+
+                        <div className="section-header">
+
+                            <div>
+
+                                <h2>
+                                    🏅 EcoTrack Badges
+                                </h2>
+
+                                <p>
+                                    Achievement badges earned by users
+                                </p>
+
+                            </div>
+
+                            <span className="activity-count">
+            {users.length} registered users
+        </span>
+
+                        </div>
+
+
+                        <div className="badges-grid">
+
+                            {[
+                                {
+                                    icon: "🌱",
+                                    name: "Eco Starter",
+                                    description: "Logged at least one activity",
+                                    requirement: 1
+                                },
+                                {
+                                    icon: "🌿",
+                                    name: "Eco Explorer",
+                                    description: "Logged 5 or more activities",
+                                    requirement: 5
+                                },
+                                {
+                                    icon: "🌍",
+                                    name: "Eco Warrior",
+                                    description: "Logged 10 or more activities",
+                                    requirement: 10
+                                },
+                                {
+                                    icon: "🏆",
+                                    name: "Eco Champion",
+                                    description: "Logged 25 or more activities",
+                                    requirement: 25
+                                }
+                            ].map((badge) => {
+
+                                const earnedBy = users.filter(
+                                    (user) => {
+
+                                        const count = activities.filter(
+                                            (item) =>
+                                                item.username === user.username
+                                        ).length;
+
+                                        return count >= badge.requirement;
+                                    }
+                                ).length;
+
+
+                                return (
+
+                                    <div
+                                        className="badge-card"
+                                        key={badge.name}
+                                    >
+
+                                        <div className="badge-icon">
+                                            {badge.icon}
+                                        </div>
+
+
+                                        <div className="badge-info">
+
+                                            <h3>
+                                                {badge.name}
+                                            </h3>
+
+                                            <p>
+                                                {badge.description}
+                                            </p>
+
+                                            <span>
+                            {earnedBy} users earned this
+                        </span>
+
+                                        </div>
+
+                                    </div>
+
+                                );
+
+                            })}
+
+                        </div>
+
+                    </div>
 
                     {/* =====================================
                         RECENT ACTIVITIES

@@ -3443,3 +3443,32 @@ tbody tr:hover {
     }
 
 }
+.input-wrapper input {
+    width: 100%;
+    padding: 14px 16px;
+    border: 1px solid #d9e2dc;
+    border-radius: 10px;
+
+    background-color: #ffffff !important;
+    color: #26352d !important;
+
+    font-size: 15px;
+    outline: none;
+    caret-color: #26352d;
+}
+
+.input-wrapper input::placeholder {
+    color: #8f9b94 !important;
+    opacity: 1 !important;
+}
+
+.input-wrapper input:focus {
+    border-color: #4d9862;
+    box-shadow: 0 0 0 4px rgba(77, 152, 98, 0.10);
+}.input-wrapper input:-webkit-autofill,
+ .input-wrapper input:-webkit-autofill:hover,
+ .input-wrapper input:-webkit-autofill:focus {
+     -webkit-text-fill-color: #26352d !important;
+     box-shadow: 0 0 0px 1000px #ffffff inset !important;
+     caret-color: #26352d !important;
+ }

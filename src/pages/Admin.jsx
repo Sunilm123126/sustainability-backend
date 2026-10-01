@@ -33,13 +33,93 @@ function Admin({ onLogout }) {
     const [analyticsLoading, setAnalyticsLoading] = useState(false);
     const [analyticsError, setAnalyticsError] = useState("");
 
+    // =====================================================
+    // LEADER STATES
+    // =====================================================
+
+    const [leaders, setLeaders] = useState([]);
+    const [leadersLoading, setLeadersLoading] = useState(false);
+
+    // =====================================================
+    // ANALYTICS FILTER STATES
+    // =====================================================
+
+    const getCurrentDate = () => {
+
+        const today = new Date();
+
+        const year =
+            today.getFullYear();
+
+        const month =
+            String(
+                today.getMonth() + 1
+            ).padStart(2, "0");
+
+        const day =
+            String(
+                today.getDate()
+            ).padStart(2, "0");
+
+        return `${year}-${month}-${day}`;
+    };
+
+
+    const getCurrentMonth = () => {
+
+        const today = new Date();
+
+        const year =
+            today.getFullYear();
+
+        const month =
+            String(
+                today.getMonth() + 1
+            ).padStart(2, "0");
+
+        return `${year}-${month}`;
+    };
+
+
+    const getCurrentYear = () => {
+
+        return new Date().getFullYear();
+
+    };
+
+
+    const [selectedDate, setSelectedDate] =
+        useState(getCurrentDate());
+
+
+    const [selectedMonth, setSelectedMonth] =
+        useState(getCurrentMonth());
+
+
+    const [selectedYear, setSelectedYear] =
+        useState(getCurrentYear());
+
+
+    const [filteredAnalytics, setFilteredAnalytics] =
+        useState(null);
+
+
+    const [filterLoading, setFilterLoading] =
+        useState(false);
+
+
+    const [filterError, setFilterError] =
+        useState("");
+
 
     // =====================================================
     // LOAD USERS
     // =====================================================
 
     const loadUsers = async () => {
+
         try {
+
             setLoading(true);
             setMessage("");
 
@@ -48,24 +128,34 @@ function Admin({ onLogout }) {
             );
 
             if (!response.ok) {
-                throw new Error("Unable to load users");
+                throw new Error(
+                    "Unable to load users"
+                );
             }
 
-            const data = await response.json();
+            const data =
+                await response.json();
 
             setUsers(data);
 
         } catch (error) {
+
             console.error(error);
-            setMessage("Unable to load users.");
+
+            setMessage(
+                "Unable to load users."
+            );
+
         } finally {
+
             setLoading(false);
+
         }
     };
 
 
     // =====================================================
-    // LOAD ADMIN ANALYTICS
+    // LOAD NORMAL ADMIN ANALYTICS
     // =====================================================
 
     const loadAnalytics = async () => {
@@ -80,14 +170,20 @@ function Admin({ onLogout }) {
             );
 
             if (!response.ok) {
+
                 throw new Error(
                     "Unable to load admin analytics"
                 );
+
             }
 
-            const data = await response.json();
+            const data =
+                await response.json();
 
-            console.log("Admin Analytics:", data);
+            console.log(
+                "Admin Analytics:",
+                data
+            );
 
             setAnalytics(data);
 
@@ -108,12 +204,146 @@ function Admin({ onLogout }) {
 
 
     // =====================================================
+    // LOAD FILTERED ADMIN ANALYTICS
+    // =====================================================
+
+    const loadFilteredAnalytics = async (
+        date = selectedDate,
+        month = selectedMonth,
+        year = selectedYear
+    ) => {
+
+        try {
+
+            setFilterLoading(true);
+            setFilterError("");
+
+            const url =
+                "http://localhost:8081/api/admin/analytics/selected" +
+                `?date=${encodeURIComponent(date)}` +
+                `&month=${encodeURIComponent(month)}` +
+                `&year=${encodeURIComponent(year)}`;
+
+
+            console.log(
+                "Filtered Admin Analytics URL:",
+                url
+            );
+
+
+            const response =
+                await fetch(url);
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    `Filtered analytics request failed: ${response.status}`
+                );
+
+            }
+
+
+            const data =
+                await response.json();
+
+
+            console.log(
+                "Filtered Admin Analytics:",
+                data
+            );
+
+
+            setFilteredAnalytics(data);
+
+
+        } catch (error) {
+
+            console.error(
+                "Filtered analytics error:",
+                error
+            );
+
+
+            setFilterError(
+                "Unable to load filtered analytics. Please check the Spring Boot server."
+            );
+
+        } finally {
+
+            setFilterLoading(false);
+
+        }
+
+    };
+
+
+    // =====================================================
+    // LOAD LEADERS
+    // =====================================================
+
+    const loadLeaders = async () => {
+
+        try {
+
+            setLeadersLoading(true);
+
+            const response =
+                await fetch(
+                    "http://localhost:8081/api/admin/leaders"
+                );
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    "Unable to load leaders"
+                );
+
+            }
+
+
+            const data =
+                await response.json();
+
+
+            console.log(
+                "Leaders:",
+                data
+            );
+
+
+            setLeaders(data);
+
+        } catch (error) {
+
+            console.error(
+                "Error loading leaders:",
+                error
+            );
+
+            setLeaders([]);
+
+        } finally {
+
+            setLeadersLoading(false);
+
+        }
+
+    };
+
+
+    // =====================================================
     // INITIAL LOAD
     // =====================================================
 
     useEffect(() => {
+
         loadUsers();
         loadAnalytics();
+        loadFilteredAnalytics();
+        loadLeaders();
+
     }, []);
 
 
@@ -123,46 +353,67 @@ function Admin({ onLogout }) {
 
     const handleDelete = async (id) => {
 
-        const confirmDelete = window.confirm(
-            "Are you sure you want to delete this user?"
-        );
+        const confirmDelete =
+            window.confirm(
+                "Are you sure you want to delete this user?"
+            );
+
 
         if (!confirmDelete) {
             return;
         }
 
+
         try {
 
-            const response = await fetch(
-                `http://localhost:8081/users/${id}`,
-                {
-                    method: "DELETE",
-                }
-            );
+            const response =
+                await fetch(
+                    `http://localhost:8081/users/${id}`,
+                    {
+                        method: "DELETE",
+                    }
+                );
 
-            const result = await response.text();
+
+            const result =
+                await response.text();
+
 
             if (!response.ok) {
+
                 alert(result);
+
                 return;
+
             }
 
-            setUsers((previousUsers) =>
-                previousUsers.filter(
-                    (user) => user.id !== id
-                )
+
+            setUsers(
+                (previousUsers) =>
+                    previousUsers.filter(
+                        (user) =>
+                            user.id !== id
+                    )
             );
 
-            // Refresh analytics because user count may change
+
             loadAnalytics();
+
+            loadFilteredAnalytics();
+
+            loadLeaders();
+
 
         } catch (error) {
 
             console.error(error);
 
-            alert("Unable to delete user.");
+            alert(
+                "Unable to delete user."
+            );
 
         }
+
     };
 
 
@@ -172,8 +423,13 @@ function Admin({ onLogout }) {
 
     const handleLogout = () => {
 
-        localStorage.removeItem("username");
-        localStorage.removeItem("role");
+        localStorage.removeItem(
+            "username"
+        );
+
+        localStorage.removeItem(
+            "role"
+        );
 
         onLogout();
 
@@ -185,8 +441,27 @@ function Admin({ onLogout }) {
     // =====================================================
 
     const handleRefresh = () => {
+
         loadUsers();
         loadAnalytics();
+        loadFilteredAnalytics();
+        loadLeaders();
+
+    };
+
+
+    // =====================================================
+    // APPLY ANALYTICS FILTER
+    // =====================================================
+
+    const handleApplyFilter = () => {
+
+        loadFilteredAnalytics(
+            selectedDate,
+            selectedMonth,
+            selectedYear
+        );
+
     };
 
 
@@ -194,18 +469,27 @@ function Admin({ onLogout }) {
     // PIE DATA
     // =====================================================
 
-    const getCategoryData = () => {
+    const getCategoryData = (
+        analyticsData = analytics
+    ) => {
 
-        if (!analytics?.categoryData) {
+        if (
+            !analyticsData?.categoryData
+        ) {
+
             return [];
+
         }
 
+
         return Object.entries(
-            analytics.categoryData
-        ).map(([name, value]) => ({
-            name,
-            value,
-        }));
+            analyticsData.categoryData
+        ).map(
+            ([name, value]) => ({
+                name,
+                value,
+            })
+        );
 
     };
 
@@ -236,7 +520,9 @@ function Admin({ onLogout }) {
                 {/* WELCOME */}
 
                 <section className="admin-welcome">
+
                     <AdminAIChatbot />
+
                     <div>
 
                         <h2>
@@ -248,6 +534,7 @@ function Admin({ onLogout }) {
                         </p>
 
                     </div>
+
 
                     <button
                         className="admin-refresh"
@@ -367,9 +654,11 @@ function Admin({ onLogout }) {
 
 
                     {message && (
+
                         <div className="admin-message">
                             {message}
                         </div>
+
                     )}
 
 
@@ -428,66 +717,73 @@ function Admin({ onLogout }) {
                             </div>
 
 
-                            {users.map((user) => (
+                            {users.map(
+                                (user) => (
 
-                                <div
-                                    className="admin-table-row"
-                                    key={user.id}
-                                >
+                                    <div
+                                        className="admin-table-row"
+                                        key={user.id}
+                                    >
 
-                                    <div className="user-id">
-                                        #{user.id}
-                                    </div>
+                                        <div className="user-id">
+                                            #{user.id}
+                                        </div>
 
 
-                                    <div className="user-name">
+                                        <div className="user-name">
 
-                                        <div className="user-mini-avatar">
+                                            <div className="user-mini-avatar">
 
-                                            {user.username
-                                                ?.charAt(0)
-                                                .toUpperCase()}
+                                                {user.username
+                                                    ?.charAt(0)
+                                                    .toUpperCase()}
+
+                                            </div>
+
+                                            <span>
+                                                {user.username}
+                                            </span>
 
                                         </div>
 
-                                        <span>
-                                            {user.username}
-                                        </span>
+
+                                        <div>
+
+                                            <span
+                                                className={
+                                                    user.role === "ADMIN"
+                                                        ? "role-badge admin-role"
+                                                        : "role-badge user-role"
+                                                }
+                                            >
+
+                                                {user.role ||
+                                                    "USER"}
+
+                                            </span>
+
+                                        </div>
+
+
+                                        <div>
+
+                                            <button
+                                                className="delete-user-btn"
+                                                onClick={() =>
+                                                    handleDelete(
+                                                        user.id
+                                                    )
+                                                }
+                                            >
+                                                Delete
+                                            </button>
+
+                                        </div>
 
                                     </div>
 
-
-                                    <div>
-
-                                        <span
-                                            className={
-                                                user.role === "ADMIN"
-                                                    ? "role-badge admin-role"
-                                                    : "role-badge user-role"
-                                            }
-                                        >
-                                            {user.role || "USER"}
-                                        </span>
-
-                                    </div>
-
-
-                                    <div>
-
-                                        <button
-                                            className="delete-user-btn"
-                                            onClick={() =>
-                                                handleDelete(user.id)
-                                            }
-                                        >
-                                            Delete
-                                        </button>
-
-                                    </div>
-
-                                </div>
-
-                            ))}
+                                )
+                            )}
 
                         </div>
 
@@ -508,7 +804,15 @@ function Admin({ onLogout }) {
 
     const AnalyticsPage = () => {
 
-        if (analyticsLoading && !analytics) {
+        const currentAnalytics =
+            filteredAnalytics ||
+            analytics;
+
+
+        if (
+            filterLoading &&
+            !currentAnalytics
+        ) {
 
             return (
 
@@ -527,7 +831,10 @@ function Admin({ onLogout }) {
         }
 
 
-        if (analyticsError) {
+        if (
+            analyticsError &&
+            !currentAnalytics
+        ) {
 
             return (
 
@@ -547,6 +854,7 @@ function Admin({ onLogout }) {
 
                         </div>
 
+
                         <button
                             className="admin-refresh"
                             onClick={loadAnalytics}
@@ -555,6 +863,7 @@ function Admin({ onLogout }) {
                         </button>
 
                     </div>
+
 
                     <div className="admin-message">
                         {analyticsError}
@@ -567,19 +876,24 @@ function Admin({ onLogout }) {
         }
 
 
-        if (!analytics) {
+        if (!currentAnalytics) {
             return null;
         }
 
 
-        const categoryData = getCategoryData();
+        const categoryData =
+            getCategoryData(
+                currentAnalytics
+            );
 
 
         return (
 
             <>
 
-                {/* HEADER */}
+                {/* =================================================
+                    HEADER
+                ================================================= */}
 
                 <section className="admin-welcome">
 
@@ -595,66 +909,197 @@ function Admin({ onLogout }) {
 
                     </div>
 
+
                     <button
                         className="admin-refresh"
-                        onClick={loadAnalytics}
+                        onClick={loadFilteredAnalytics}
+                        disabled={filterLoading}
                     >
-                        ↻ Refresh Analytics
+
+                        {filterLoading
+                            ? "⏳ Loading..."
+                            : "↻ Refresh Analytics"}
+
                     </button>
 
                 </section>
 
 
-                {/* SUMMARY */}
+                {/* =================================================
+                    DATE / MONTH / YEAR FILTER
+                ================================================= */}
+
+                <section className="admin-users-card">
+
+                    <div className="admin-section-header">
+
+                        <div>
+
+                            <h2>
+                                Analytics Filters
+                            </h2>
+
+                            <p>
+                                Select date, month and year to view dynamic platform analytics.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <div className="admin-analytics-filters">
+
+
+                        {/* DATE */}
+
+                        <div className="admin-filter-group">
+
+                            <label>
+                                Select Date
+                            </label>
+
+                            <input
+                                type="date"
+                                value={selectedDate}
+                                onChange={(event) =>
+                                    setSelectedDate(
+                                        event.target.value
+                                    )
+                                }
+                            />
+
+                        </div>
+
+
+                        {/* MONTH */}
+
+                        <div className="admin-filter-group">
+
+                            <label>
+                                Select Month
+                            </label>
+
+                            <input
+                                type="month"
+                                value={selectedMonth}
+                                onChange={(event) =>
+                                    setSelectedMonth(
+                                        event.target.value
+                                    )
+                                }
+                            />
+
+                        </div>
+
+
+                        {/* YEAR */}
+
+                        <div className="admin-filter-group">
+
+                            <label>
+                                Select Year
+                            </label>
+
+                            <select
+                                value={selectedYear}
+                                onChange={(event) =>
+                                    setSelectedYear(
+                                        Number(
+                                            event.target.value
+                                        )
+                                    )
+                                }
+                            >
+
+                                {Array.from(
+                                    {
+                                        length: 7,
+                                    },
+                                    (_, index) =>
+                                        new Date()
+                                            .getFullYear() -
+                                        5 +
+                                        index
+                                ).map(
+                                    (year) => (
+
+                                        <option
+                                            key={year}
+                                            value={year}
+                                        >
+                                            {year}
+                                        </option>
+
+                                    )
+                                )}
+
+                            </select>
+
+                        </div>
+
+
+                        {/* APPLY */}
+
+                        <button
+                            className="admin-refresh"
+                            onClick={
+                                handleApplyFilter
+                            }
+                            disabled={
+                                filterLoading
+                            }
+                        >
+
+                            {filterLoading
+                                ? "⏳ Applying..."
+                                : "🔍 Apply Filter"}
+
+                        </button>
+
+                    </div>
+
+
+                    {filterError && (
+
+                        <div
+                            className="admin-message"
+                            style={{
+                                marginTop: "15px",
+                            }}
+                        >
+                            {filterError}
+                        </div>
+
+                    )}
+
+                </section>
+
+
+                {/* =================================================
+                    SUMMARY
+                ================================================= */}
 
                 <section className="admin-stats">
+
+
+                    {/* DATE */}
 
                     <div className="admin-stat-card">
 
                         <div className="admin-stat-icon green">
-                            👥
+                            📅
                         </div>
 
                         <p>
-                            Total Users
+                            Selected Date
                         </p>
 
                         <h2>
-                            {analytics.totalUsers}
-                        </h2>
-
-                    </div>
-
-
-                    <div className="admin-stat-card">
-
-                        <div className="admin-stat-icon blue">
-                            📋
-                        </div>
-
-                        <p>
-                            Total Activities
-                        </p>
-
-                        <h2>
-                            {analytics.totalActivities}
-                        </h2>
-
-                    </div>
-
-
-                    <div className="admin-stat-card">
-
-                        <div className="admin-stat-icon purple">
-                            🌍
-                        </div>
-
-                        <p>
-                            Total Emissions
-                        </p>
-
-                        <h2>
-                            {analytics.totalEmissions}
+                            {Number(
+                                currentAnalytics.todayEmission ||
+                                0
+                            ).toFixed(2)}
                         </h2>
 
                         <small>
@@ -664,22 +1109,79 @@ function Admin({ onLogout }) {
                     </div>
 
 
+                    {/* WEEK */}
+
                     <div className="admin-stat-card">
 
-                        <div className="admin-stat-icon orange">
-                            🌱
+                        <div className="admin-stat-icon blue">
+                            📊
                         </div>
 
                         <p>
-                            Average Eco Score
+                            Selected Week
                         </p>
 
                         <h2>
-                            {analytics.averageEcoScore}
+                            {Number(
+                                currentAnalytics.weeklyEmission ||
+                                0
+                            ).toFixed(2)}
                         </h2>
 
                         <small>
-                            / 100
+                            kg CO₂e
+                        </small>
+
+                    </div>
+
+
+                    {/* MONTH */}
+
+                    <div className="admin-stat-card">
+
+                        <div className="admin-stat-icon purple">
+                            📈
+                        </div>
+
+                        <p>
+                            Selected Month
+                        </p>
+
+                        <h2>
+                            {Number(
+                                currentAnalytics.monthlyEmission ||
+                                0
+                            ).toFixed(2)}
+                        </h2>
+
+                        <small>
+                            kg CO₂e
+                        </small>
+
+                    </div>
+
+
+                    {/* YEAR */}
+
+                    <div className="admin-stat-card">
+
+                        <div className="admin-stat-icon orange">
+                            🌍
+                        </div>
+
+                        <p>
+                            Selected Year
+                        </p>
+
+                        <h2>
+                            {Number(
+                                currentAnalytics.yearlyEmission ||
+                                0
+                            ).toFixed(2)}
+                        </h2>
+
+                        <small>
+                            kg CO₂e
                         </small>
 
                     </div>
@@ -687,7 +1189,9 @@ function Admin({ onLogout }) {
                 </section>
 
 
-                {/* DAILY + WEEKLY */}
+                {/* =================================================
+                    DAILY + WEEKLY
+                ================================================= */}
 
                 <section className="admin-chart-grid">
 
@@ -705,7 +1209,7 @@ function Admin({ onLogout }) {
                                 </h2>
 
                                 <p>
-                                    Total emissions generated today
+                                    Emissions for {selectedDate}
                                 </p>
 
                             </div>
@@ -721,7 +1225,10 @@ function Admin({ onLogout }) {
                             >
 
                                 <BarChart
-                                    data={analytics.dailyData}
+                                    data={
+                                        currentAnalytics.dailyData ||
+                                        []
+                                    }
                                 >
 
                                     <CartesianGrid
@@ -780,7 +1287,10 @@ function Admin({ onLogout }) {
                             >
 
                                 <LineChart
-                                    data={analytics.weeklyData}
+                                    data={
+                                        currentAnalytics.weeklyData ||
+                                        []
+                                    }
                                 >
 
                                     <CartesianGrid
@@ -814,7 +1324,9 @@ function Admin({ onLogout }) {
                 </section>
 
 
-                {/* MONTHLY */}
+                {/* =================================================
+                    MONTHLY
+                ================================================= */}
 
                 <section className="admin-users-card">
 
@@ -827,7 +1339,7 @@ function Admin({ onLogout }) {
                             </h2>
 
                             <p>
-                                Daily emissions for the current month
+                                Daily emissions for {selectedMonth}
                             </p>
 
                         </div>
@@ -843,7 +1355,10 @@ function Admin({ onLogout }) {
                         >
 
                             <LineChart
-                                data={analytics.monthlyData}
+                                data={
+                                    currentAnalytics.monthlyData ||
+                                    []
+                                }
                             >
 
                                 <CartesianGrid
@@ -875,7 +1390,9 @@ function Admin({ onLogout }) {
                 </section>
 
 
-                {/* YEARLY */}
+                {/* =================================================
+                    YEARLY
+                ================================================= */}
 
                 <section className="admin-users-card">
 
@@ -888,7 +1405,7 @@ function Admin({ onLogout }) {
                             </h2>
 
                             <p>
-                                Monthly emissions for the current year
+                                Monthly emissions for {selectedYear}
                             </p>
 
                         </div>
@@ -904,7 +1421,10 @@ function Admin({ onLogout }) {
                         >
 
                             <BarChart
-                                data={analytics.yearlyData}
+                                data={
+                                    currentAnalytics.yearlyData ||
+                                    []
+                                }
                             >
 
                                 <CartesianGrid
@@ -934,7 +1454,9 @@ function Admin({ onLogout }) {
                 </section>
 
 
-                {/* CATEGORY + TOP USERS */}
+                {/* =================================================
+                    CATEGORY + TOP USERS
+                ================================================= */}
 
                 <section className="admin-chart-grid">
 
@@ -952,7 +1474,7 @@ function Admin({ onLogout }) {
                                 </h2>
 
                                 <p>
-                                    Platform-wide category breakdown
+                                    Category breakdown for {selectedMonth}
                                 </p>
 
                             </div>
@@ -982,7 +1504,9 @@ function Admin({ onLogout }) {
                                     <PieChart>
 
                                         <Pie
-                                            data={categoryData}
+                                            data={
+                                                categoryData
+                                            }
                                             dataKey="value"
                                             nameKey="name"
                                             cx="50%"
@@ -992,7 +1516,10 @@ function Admin({ onLogout }) {
                                         >
 
                                             {categoryData.map(
-                                                (entry, index) => (
+                                                (
+                                                    entry,
+                                                    index
+                                                ) => (
 
                                                     <Cell
                                                         key={`cell-${index}`}
@@ -1037,7 +1564,7 @@ function Admin({ onLogout }) {
                                 </h2>
 
                                 <p>
-                                    Users with highest total emissions
+                                    Users with highest emissions for {selectedMonth}
                                 </p>
 
                             </div>
@@ -1045,7 +1572,7 @@ function Admin({ onLogout }) {
                         </div>
 
 
-                        {analytics.topUsers?.length === 0 ? (
+                        {currentAnalytics.topUsers?.length === 0 ? (
 
                             <div className="admin-empty">
 
@@ -1080,24 +1607,34 @@ function Admin({ onLogout }) {
                                 </div>
 
 
-                                {analytics.topUsers.map(
-                                    (user, index) => (
+                                {currentAnalytics.topUsers?.map(
+                                    (
+                                        user,
+                                        index
+                                    ) => (
 
                                         <div
                                             className="admin-table-row"
-                                            key={user.username}
+                                            key={
+                                                user.username
+                                            }
                                         >
 
                                             <div className="user-id">
                                                 #{index + 1}
                                             </div>
 
+
                                             <div className="user-name">
 
                                                 <div className="user-mini-avatar">
+
                                                     {user.username
-                                                        ?.charAt(0)
+                                                        ?.charAt(
+                                                            0
+                                                        )
                                                         .toUpperCase()}
+
                                                 </div>
 
                                                 <span>
@@ -1106,9 +1643,11 @@ function Admin({ onLogout }) {
 
                                             </div>
 
+
                                             <div>
                                                 {user.activities}
                                             </div>
+
 
                                             <div>
                                                 {user.emissions} kg
@@ -1127,7 +1666,282 @@ function Admin({ onLogout }) {
 
                 </section>
 
+
+                {/* =================================================
+                    SELECTED DATE ACTIVITIES
+                ================================================= */}
+
+                {currentAnalytics.selectedDateActivities && (
+
+                    <section className="admin-users-card">
+
+                        <div className="admin-section-header">
+
+                            <div>
+
+                                <h2>
+                                    Selected Date Activities
+                                </h2>
+
+                                <p>
+                                    Activities recorded on {selectedDate}
+                                </p>
+
+                            </div>
+
+                        </div>
+
+
+                        {currentAnalytics.selectedDateActivities.length === 0 ? (
+
+                            <div className="admin-empty">
+
+                                <div className="admin-empty-icon">
+                                    🌱
+                                </div>
+
+                                <h3>
+                                    No activities
+                                </h3>
+
+                                <p>
+                                    No activities were recorded on this date.
+                                </p>
+
+                            </div>
+
+                        ) : (
+
+                            <div className="admin-table">
+
+                                <div className="admin-table-header">
+
+                                    <div>
+                                        User
+                                    </div>
+
+                                    <div>
+                                        Activity
+                                    </div>
+
+                                    <div>
+                                        Category
+                                    </div>
+
+                                    <div>
+                                        Emission
+                                    </div>
+
+                                </div>
+
+
+                                {currentAnalytics.selectedDateActivities.map(
+                                    (activity) => (
+
+                                        <div
+                                            className="admin-table-row"
+                                            key={
+                                                activity.id
+                                            }
+                                        >
+
+                                            <div>
+                                                {activity.username}
+                                            </div>
+
+                                            <div>
+                                                {activity.activity ||
+                                                    "Activity"}
+                                            </div>
+
+                                            <div>
+                                                {activity.category ||
+                                                    "Other"}
+                                            </div>
+
+                                            <div>
+                                                {Number(
+                                                    activity.emission ||
+                                                    0
+                                                ).toFixed(2)}{" "}
+                                                kg
+                                            </div>
+
+                                        </div>
+
+                                    )
+                                )}
+
+                            </div>
+
+                        )}
+
+                    </section>
+
+                )}
+
             </>
+
+        );
+
+    };
+
+
+    // =====================================================
+    // LEADERS PAGE
+    // =====================================================
+
+    const LeadersPage = () => {
+
+        return (
+
+            <section className="admin-users-card">
+
+                <div className="admin-section-header">
+
+                    <div>
+
+                        <h2>
+                            🏆 Sustainability Leaders
+                        </h2>
+
+                        <p>
+                            Users with the highest sustainability activity participation
+                        </p>
+
+                    </div>
+
+
+                    <button
+                        className="admin-refresh"
+                        onClick={loadLeaders}
+                    >
+                        ↻ Refresh
+                    </button>
+
+                </div>
+
+
+                {leadersLoading ? (
+
+                    <div className="admin-empty">
+
+                        <div className="admin-spinner"></div>
+
+                        <p>
+                            Loading leaderboard...
+                        </p>
+
+                    </div>
+
+                ) : leaders.length === 0 ? (
+
+                    <div className="admin-empty">
+
+                        <div className="admin-empty-icon">
+                            🏆
+                        </div>
+
+                        <h3>
+                            No leaders yet
+                        </h3>
+
+                        <p>
+                            Users need to log activities before appearing on the leaderboard.
+                        </p>
+
+                    </div>
+
+                ) : (
+
+                    <div className="leaders-list">
+
+                        {leaders.map(
+                            (
+                                leader,
+                                index
+                            ) => (
+
+                                <div
+                                    className="leader-row"
+                                    key={
+                                        leader.username
+                                    }
+                                >
+
+                                    <div className="leader-rank">
+
+                                        {index === 0
+                                            ? "🥇"
+                                            : index === 1
+                                                ? "🥈"
+                                                : index === 2
+                                                    ? "🥉"
+                                                    : `#${index + 1}`}
+
+                                    </div>
+
+
+                                    <div className="leader-avatar">
+
+                                        {leader.username
+                                            ?.charAt(0)
+                                            .toUpperCase()}
+
+                                    </div>
+
+
+                                    <div className="leader-user">
+
+                                        <strong>
+                                            {leader.username}
+                                        </strong>
+
+                                        <span>
+                                            Sustainability participant
+                                        </span>
+
+                                    </div>
+
+
+                                    <div className="leader-stat">
+
+                                        <strong>
+                                            {leader.activityCount}
+                                        </strong>
+
+                                        <span>
+                                            Activities
+                                        </span>
+
+                                    </div>
+
+
+                                    <div className="leader-stat">
+
+                                        <strong>
+                                            {Number(
+                                                leader.emission ||
+                                                0
+                                            ).toFixed(2)}
+                                        </strong>
+
+                                        <span>
+                                            kg CO₂e
+                                        </span>
+
+                                    </div>
+
+                                </div>
+
+                            )
+                        )}
+
+                    </div>
+
+                )}
+
+            </section>
 
         );
 
@@ -1159,6 +1973,7 @@ function Admin({ onLogout }) {
                     </div>
 
                 </div>
+
 
                 <div className="admin-empty">
 
@@ -1199,6 +2014,9 @@ function Admin({ onLogout }) {
 
             case "analytics":
                 return <AnalyticsPage />;
+
+            case "leaders":
+                return <LeadersPage />;
 
             case "dashboard":
             default:
@@ -1253,7 +2071,9 @@ function Admin({ onLogout }) {
                                 : ""
                         }`}
                         onClick={() =>
-                            setActivePage("dashboard")
+                            setActivePage(
+                                "dashboard"
+                            )
                         }
                     >
 
@@ -1273,7 +2093,9 @@ function Admin({ onLogout }) {
                                 : ""
                         }`}
                         onClick={() =>
-                            setActivePage("users")
+                            setActivePage(
+                                "users"
+                            )
                         }
                     >
 
@@ -1293,7 +2115,9 @@ function Admin({ onLogout }) {
                                 : ""
                         }`}
                         onClick={() =>
-                            setActivePage("activities")
+                            setActivePage(
+                                "activities"
+                            )
                         }
                     >
 
@@ -1313,7 +2137,9 @@ function Admin({ onLogout }) {
                                 : ""
                         }`}
                         onClick={() =>
-                            setActivePage("analytics")
+                            setActivePage(
+                                "analytics"
+                            )
                         }
                     >
 
@@ -1326,6 +2152,28 @@ function Admin({ onLogout }) {
                     </button>
 
 
+                    <button
+                        className={`admin-nav-item ${
+                            activePage === "leaders"
+                                ? "active"
+                                : ""
+                        }`}
+                        onClick={() =>
+                            setActivePage(
+                                "leaders"
+                            )
+                        }
+                    >
+
+                        <span>
+                            🏆
+                        </span>
+
+                        Leaders
+
+                    </button>
+
+
                 </nav>
 
 
@@ -1333,7 +2181,9 @@ function Admin({ onLogout }) {
 
                     <button
                         className="admin-logout"
-                        onClick={handleLogout}
+                        onClick={
+                            handleLogout
+                        }
                     >
 
                         <span>
@@ -1377,9 +2227,13 @@ function Admin({ onLogout }) {
                     <div className="admin-header-right">
 
                         <div className="admin-notification">
+
                             🔔
+
                             <span></span>
+
                         </div>
+
 
                         <div className="admin-avatar">
                             A

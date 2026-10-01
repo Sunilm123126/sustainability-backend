@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
+import LandingPage from "./LandingPage";
+import Goal from "./pages/Goal";
 import AIChatbot from "./components/AIChatbot";
-
 import {
     ResponsiveContainer,
     PieChart,
@@ -14,19 +15,27 @@ import {
     Bar,
     XAxis,
     YAxis,
-    CartesianGrid
+    CartesianGrid,
 } from "recharts";
 
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Admin from "./pages/Admin";
 import LogActivity from "./pages/LogActivity";
-import Goal from "./pages/Goal";
-import LandingPage from "./LandingPage";
+
+import OrganizationLogin
+    from "./pages/OrganizationLogin";
+
+import OrganizationRegister
+    from "./pages/OrganizationRegister";
+
+import OrganizationDashboard
+    from "./pages/OrganizationDashboard";
+
+import OrganizationInvitation
+    from "./pages/OrganizationInvitation";
 
 import "./App.css";
-
-
 /* =========================================================
    BACKEND URL
 ========================================================= */
@@ -63,23 +72,19 @@ function Dashboard({ onLogout }) {
     const loadDashboard = async () => {
 
         if (!username) {
-
             setLoading(false);
-
             return;
         }
 
         try {
 
             setLoading(true);
-
             setError("");
 
             const response =
                 await fetch(
                     `${API_URL}/api/analytics/dashboard/${encodeURIComponent(username)}`
                 );
-
 
             if (!response.ok) {
 
@@ -89,16 +94,13 @@ function Dashboard({ onLogout }) {
 
             }
 
-
             const result =
                 await response.json();
-
 
             console.log(
                 "Dashboard data:",
                 result
             );
-
 
             setDashboardData(result);
 
@@ -108,7 +110,6 @@ function Dashboard({ onLogout }) {
                 "Dashboard error:",
                 err
             );
-
 
             setError(
                 "Unable to load dashboard. Please check that the Spring Boot server is running."
@@ -141,7 +142,6 @@ function Dashboard({ onLogout }) {
     const handleLogout = () => {
 
         localStorage.removeItem("username");
-
         localStorage.removeItem("role");
 
         onLogout();
@@ -972,12 +972,12 @@ function Dashboard({ onLogout }) {
 
                                     <td>
 
-                                        <span className="category-badge">
+                                            <span className="category-badge">
 
-                                            {item.category ||
-                                                "Other"}
+                                                {item.category ||
+                                                    "Other"}
 
-                                        </span>
+                                            </span>
 
                                     </td>
 
@@ -1151,7 +1151,6 @@ function Dashboard({ onLogout }) {
             setFilterLoading(true);
 
             setFilterError("");
-
 
             try {
 
@@ -1709,7 +1708,6 @@ function Dashboard({ onLogout }) {
                         <div className="stat-card-value">
 
                             {todayEmission.toFixed(2)}
-
                             {" "}kg CO₂e
 
                         </div>
@@ -1734,7 +1732,6 @@ function Dashboard({ onLogout }) {
                         <div className="stat-card-value">
 
                             {weeklyEmission.toFixed(2)}
-
                             {" "}kg CO₂e
 
                         </div>
@@ -1759,7 +1756,6 @@ function Dashboard({ onLogout }) {
                         <div className="stat-card-value">
 
                             {monthlyEmission.toFixed(2)}
-
                             {" "}kg CO₂e
 
                         </div>
@@ -1784,7 +1780,6 @@ function Dashboard({ onLogout }) {
                         <div className="stat-card-value">
 
                             {yearlyEmission.toFixed(2)}
-
                             {" "}kg CO₂e
 
                         </div>
@@ -2806,6 +2801,40 @@ function Dashboard({ onLogout }) {
 
 
 /* =========================================================
+   SPECIAL URL PATHS
+========================================================= */
+function getInvitationTokenFromPath() {
+
+    const pathname =
+        window.location.pathname;
+
+    const prefix =
+        "/organization/invitation/";
+
+    if (!pathname.startsWith(prefix)) {
+        return null;
+    }
+
+    const token =
+        pathname
+            .substring(prefix.length)
+            .replace(/\/$/, "");
+
+    if (!token) {
+        return null;
+    }
+
+    return decodeURIComponent(token);
+}
+
+function isLoginPath() {
+
+    return window.location.pathname === "/login";
+
+}
+
+
+/* =========================================================
    APP
 ========================================================= */
 
@@ -2813,6 +2842,42 @@ function App() {
 
     const [page, setPage] =
         useState(() => {
+
+            const invitationToken =
+                getInvitationTokenFromPath();
+
+
+            if (invitationToken) {
+
+                return "organizationInvitation";
+
+            }
+
+
+            if (isLoginPath()) {
+
+                return "login";
+
+            }
+
+
+            /* =================================================
+               ORGANIZATION LOGIN CHECK
+            ================================================= */
+
+            const organizationLoggedIn =
+                localStorage.getItem(
+                    "organizationLoggedIn"
+                );
+
+            if (
+                organizationLoggedIn === "true"
+            ) {
+
+                return "organizationDashboard";
+
+            }
+
 
             const username =
                 localStorage.getItem(
@@ -2860,7 +2925,113 @@ function App() {
 
 
     /* =====================================================
-       LOGIN
+       POP STATE
+    ===================================================== */
+
+    useEffect(() => {
+
+        const handlePopState = () => {
+
+            const invitationToken =
+                getInvitationTokenFromPath();
+
+
+            if (invitationToken) {
+
+                setPage(
+                    "organizationInvitation"
+                );
+
+                return;
+
+            }
+
+
+            if (isLoginPath()) {
+
+                setPage("login");
+
+                return;
+
+            }
+
+
+            if (
+                window.location.pathname === "/"
+            ) {
+
+                const organizationLoggedIn =
+                    localStorage.getItem(
+                        "organizationLoggedIn"
+                    );
+
+
+                if (
+                    organizationLoggedIn === "true"
+                ) {
+
+                    setPage(
+                        "organizationDashboard"
+                    );
+
+                    return;
+
+                }
+
+
+                const username =
+                    localStorage.getItem(
+                        "username"
+                    );
+
+                const role =
+                    localStorage.getItem(
+                        "role"
+                    );
+
+
+                if (
+                    username &&
+                    role === "ADMIN"
+                ) {
+
+                    setPage("admin");
+
+                } else if (username) {
+
+                    setPage("dashboard");
+
+                } else {
+
+                    setPage("landing");
+
+                }
+
+            }
+
+        };
+
+
+        window.addEventListener(
+            "popstate",
+            handlePopState
+        );
+
+
+        return () => {
+
+            window.removeEventListener(
+                "popstate",
+                handlePopState
+            );
+
+        };
+
+    }, []);
+
+
+    /* =====================================================
+       USER LOGIN
     ===================================================== */
 
     const handleLogin = (
@@ -2895,7 +3066,7 @@ function App() {
 
 
     /* =====================================================
-       LOGOUT
+       NORMAL USER LOGOUT
     ===================================================== */
 
     const handleLogout = () => {
@@ -2914,12 +3085,45 @@ function App() {
         );
 
 
-        /* IMPORTANT:
-           Go to LANDING PAGE */
-
         setPage("landing");
 
     };
+
+
+    /* =====================================================
+       ORGANIZATION INVITATION PAGE
+    ===================================================== */
+
+    if (
+        page === "organizationInvitation"
+    ) {
+
+        const invitationToken =
+            getInvitationTokenFromPath();
+
+
+        return (
+
+            <OrganizationInvitation
+                token={invitationToken}
+
+                onBack={() => {
+
+                    window.history.pushState(
+                        {},
+                        "",
+                        "/"
+                    );
+
+                    setPage("landing");
+
+                }}
+
+            />
+
+        );
+
+    }
 
 
     /* =====================================================
@@ -2940,6 +3144,7 @@ function App() {
                 onRegister={() =>
                     setPage("register")
                 }
+
             />
 
         );
@@ -2948,7 +3153,7 @@ function App() {
 
 
     /* =====================================================
-       LOGIN PAGE
+       USER LOGIN
     ===================================================== */
 
     if (
@@ -2959,11 +3164,122 @@ function App() {
 
             <Login
                 onLogin={handleLogin}
+
                 onRegister={() =>
                     setPage("register")
                 }
+
+                onOrganizationLogin={() =>
+                    setPage("organizationLogin")
+                }
+
             />
 
+        );
+
+    }
+
+
+    /* =====================================================
+       ORGANIZATION LOGIN
+   /* =====================================================
+   ORGANIZATION LOGIN
+===================================================== */
+
+    if (page === "organizationLogin") {
+
+        return (
+            <OrganizationLogin
+                onBack={() => {
+                    setPage("login");
+                }}
+
+                onRegister={() => {
+                    setPage("organizationRegister");
+                }}
+
+                onOrganizationLogin={(organization) => {
+
+                    localStorage.setItem(
+                        "organizationId",
+                        String(organization.id)
+                    );
+
+                    localStorage.setItem(
+                        "organizationName",
+                        organization.name
+                    );
+
+                    localStorage.setItem(
+                        "organizationEmail",
+                        organization.email
+                    );
+
+                    localStorage.setItem(
+                        "organizationLoggedIn",
+                        "true"
+                    );
+
+                    setPage("organizationDashboard");
+
+                }}
+            />
+        );
+
+    }
+
+
+    /* =====================================================
+       ORGANIZATION REGISTER
+    ===================================================== */
+
+    if (page === "organizationRegister") {
+
+        return (
+            <OrganizationRegister
+                onBack={() =>
+                    setPage("login")
+                }
+
+                onLogin={() =>
+                    setPage("organizationLogin")
+                }
+            />
+        );
+
+    }
+
+
+    /* =====================================================
+       ORGANIZATION DASHBOARD
+    ===================================================== */
+
+    if (page === "organizationDashboard") {
+
+        return (
+            <OrganizationDashboard
+                onLogout={() => {
+
+                    localStorage.removeItem(
+                        "organizationId"
+                    );
+
+                    localStorage.removeItem(
+                        "organizationName"
+                    );
+
+                    localStorage.removeItem(
+                        "organizationEmail"
+                    );
+
+                    localStorage.removeItem(
+                        "organizationLoggedIn"
+                    );
+
+                    setPage("login");
+
+                }}
+            />
         );
 
     }
@@ -2973,18 +3289,14 @@ function App() {
        REGISTER PAGE
     ===================================================== */
 
-    if (
-        page === "register"
-    ) {
+    if (page === "register") {
 
         return (
-
             <Register
                 onBackToLogin={() =>
                     setPage("login")
                 }
             />
-
         );
 
     }
@@ -2994,16 +3306,12 @@ function App() {
        ADMIN PAGE
     ===================================================== */
 
-    if (
-        page === "admin"
-    ) {
+    if (page === "admin") {
 
         return (
-
             <Admin
                 onLogout={handleLogout}
             />
-
         );
 
     }
@@ -3014,14 +3322,11 @@ function App() {
     ===================================================== */
 
     return (
-
         <Dashboard
             onLogout={handleLogout}
         />
-
     );
 
 }
-
 
 export default App;
